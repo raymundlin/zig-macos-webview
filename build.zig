@@ -9,7 +9,7 @@ pub fn build(b: *std.Build) !void {
         .root_source_file = .{ .path = "src/server.zig" },
         .target = target,
         .optimize = optimize,
-        .strip = optimize != .Debug,
+        // .strip = optimize != .Debug,
     });
 
     const swiftc_command = b.addSystemCommand(&.{
@@ -20,8 +20,8 @@ pub fn build(b: *std.Build) !void {
         "-target",
 
         b.fmt("{s}-apple-macosx{}", .{
-            @tagName(target.result.cpu.arch),
-            target.result.os.version_range.semver.min,
+            @tagName(target.toTarget().cpu.arch), // result.cpu.arch
+            target.toTarget().os.getVersionRange().semver.min, // result.os.version_range.semver.min
         }),
     });
 
@@ -41,18 +41,18 @@ pub fn build(b: *std.Build) !void {
 
     const sdk = std.zig.system.darwin.getSdk(
         b.allocator,
-        target.result,
+        target.toTarget(),
     ) orelse return error.UnknownSdk;
 
     server_object.addSystemIncludePath(
-        .{ .path = b.fmt("{s}/usr/include", .{sdk}) },
+        .{ .path = b.fmt("{s}/usr/include", .{sdk.path}) },
     );
 
     server_object.addFrameworkPath(
-        .{ .path = b.fmt("{s}/System/Library/Frameworks", .{sdk}) },
+        .{ .path = b.fmt("{s}/System/Library/Frameworks", .{sdk.path}) },
     );
 
-    server_object.addLibraryPath(.{ .path = b.fmt("{s}/usr/lib", .{sdk}) });
+    server_object.addLibraryPath(.{ .path = b.fmt("{s}/usr/lib", .{sdk.path}) });
 
     const app_bin = b.addInstallBinFile(app_output_path, "app");
 

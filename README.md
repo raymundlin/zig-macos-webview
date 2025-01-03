@@ -7,3 +7,8 @@ and web technologies to build native applications. A Zig web server serves a web
 (HTML/JavaScript/CSS) displayed in a WebView window within a Swift UI App. This leverage the ease of
 designing UIs with web technologies, plus the effectiveness of Zig for logic. The output: a compact
 binary (just 160 KB), optimized for speed and smaller than Electron-based alternatives.
+
+## Forked version
+
+Make this project work with Zig 0.11.0
+

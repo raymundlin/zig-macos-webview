@@ -5,7 +5,8 @@ const log = std.log.scoped(.server);
 var active_server: ?std.http.Server = null;
 
 fn startServer() !void {
-    var server = std.http.Server.init(.{ .reuse_address = true });
+    const allocator = std.heap.page_allocator;
+    var server = std.http.Server.init(allocator, .{ .reuse_address = true });
 
     errdefer server.deinit();
 
@@ -24,25 +25,23 @@ fn startListener(allocator: std.mem.Allocator) void {
 }
 
 fn listen(allocator: std.mem.Allocator) !void {
-    while (true) {
-        if (active_server) |*server| {
-            var res = try server.accept(.{ .allocator = allocator });
+    if (active_server) |*server| {
+        var res = try server.accept(.{ .allocator = allocator });
+        defer res.deinit();
 
-            defer res.deinit();
+        while (res.reset() != .closing) {
+            try res.wait();
 
-            while (res.reset() != .closing) {
-                try res.wait();
+            res.status = .ok;
+            res.transfer_encoding = .chunked;
 
-                res.status = .ok;
-                res.transfer_encoding = .chunked;
-
-                try res.send();
-                try res.writeAll("Hello, World!\n");
-                try res.finish();
-            }
-        } else {
-            return error.NoActiveServer;
+            // try res.send();
+            try res.do();
+            try res.writeAll("Hello, World!\n");
+            try res.finish();
         }
+    } else {
+        return error.NoActiveServer;
     }
 }
 
